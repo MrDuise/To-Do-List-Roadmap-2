@@ -76,7 +76,7 @@ tasksRouter.get("/task/:id", async (req: Request, res: Response, next: NextFunct
 })
 
 //update a single task
-tasksRouter.get("/task/update", async (req: Request, res: Response, next: NextFunction) =>{
+tasksRouter.post("/task/update", async (req: Request, res: Response, next: NextFunction) =>{
   const user = req.user as User; // Assuming user information is available in the request body
   const { taskID, status } = req.body; // Get the taskID and status from the request body
 
@@ -107,9 +107,36 @@ tasksRouter.get("/task/update", async (req: Request, res: Response, next: NextFu
   }
 })
 
-tasksRouter.delete("/task/:id", (req: Request, res: Response, next: NextFunction) => {
+tasksRouter.delete("/task/:id", async (req: Request, res: Response, next: NextFunction) => {
+  const user = req.user as User; 
+  const taskID = req.params.id; 
 
-})
+  try {
+      const userID = user.id;
+      const task = await Task.findOne({
+          where: {
+              userID: userID, 
+              id: taskID 
+          }
+      });
+
+      if (task) {
+          await Task.destroy({
+              where: {
+                userID: userID,
+                id: taskID
+              }
+          });
+
+          res.status(200).json({ message: "Task deleted successfully." });
+      } else {
+        res.status(404).json({ message: "Task not found." });
+      }
+  } catch (err) {
+      console.error(err);
+      next(err);
+  }
+});
 
 tasksRouter.post("/task", async (req: Request, res: Response, next: NextFunction) => {
   const { name, description, status } = req.body;
